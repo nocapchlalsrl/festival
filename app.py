@@ -7,7 +7,10 @@ from functools import wraps
 API_BASE = "/api/v1"
 MASTER_KEY = os.environ.get("MASTER_KEY", "chlalsrlWKd")
 
-UPLOAD_DIR = "uploads"
+# ✅ 업로드 경로를 "절대경로"로 고정 (배포/gunicorn 환경에서 상대경로 때문에 500 나는 문제 해결)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 app = Flask(__name__, static_folder=".")
@@ -133,6 +136,7 @@ def serve_js(filename):
 
 @app.get("/uploads/<path:filename>")
 def serve_upload(filename):
+    # ✅ UPLOAD_DIR가 절대경로여도 send_from_directory는 정상 동작함
     return send_from_directory(UPLOAD_DIR, filename)
 
 # ===== Public APIs =====
