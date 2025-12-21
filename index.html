@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <title>🎅 축제 부스 주문/예약</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root{
+      --bg1:#1a0b0f;      /* 와인 레드 */
+      --bg2:#0f1a12;      /* 딥 그린 */
+      --card:rgba(255,255,255,.12);
+      --card2:rgba(255,255,255,.10);
+      --border:rgba(255,255,255,.18);
+      --text:#fff8f2;
+      --muted:rgba(255,248,242,.72);
+
+      --red:#e53935;
+      --green:#2ecc71;
+      --gold:#ffd166;
+
+      --shadow:0 18px 55px rgba(0,0,0,.45);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      max-width:1080px;
+      padding:22px 16px 44px;
+      margin-left:auto; margin-right:auto;
+      font-family: ui-sans-serif,system-ui,AppleSDGothicNeo,Segoe UI,Arial;
+      color:var(--text);
+      background:
+        radial-gradient(1200px 900px at 10% -10%, rgba(229,57,53,.28), transparent 55%),
+        radial-gradient(1000px 800px at 95% 10%, rgba(46,204,113,.22), transparent 55%),
+        radial-gradient(900px 650px at 55% 0%, rgba(255,209,102,.18), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2) 55%, #070b08);
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    h1{
+      margin:0 0 8px;
+      font-size:28px;
+      letter-spacing:-.3px;
+    }
+    .muted{color:var(--muted)}
+
+    /* 상단 헤더(관리UI 없음) */
+    .top{
+      display:flex; align-items:center; gap:12px;
+      margin-bottom:14px;
+    }
+    .logo{
+      width:52px; height:52px; border-radius:50%;
+      display:flex; align-items:center; justify-content:center;
+      font-size:26px;
+      background: radial-gradient(circle at 30% 30%,
+        rgba(255,209,102,.95),
+        rgba(229,57,53,.94) 42%,
+        rgba(255,255,255,.35) 82%);
+      box-shadow:0 12px 35px rgba(229,57,53,.35);
+      border:1px solid rgba(255,255,255,.18);
+      flex:0 0 auto;
+    }
+
+    /* 카드/그리드 */
+    .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px}
+    .card{
+      background:var(--card);
+      border:1px solid var(--border);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      padding:14px;
+      position:relative;
+      overflow:hidden;
+    }
+    .card::before{
+      content:"";
+      position:absolute; inset:-2px -2px auto -2px;
+      height:14px;
+      background:linear-gradient(90deg, rgba(255,255,255,.25), rgba(255,209,102,.25), rgba(229,57,53,.20), rgba(46,204,113,.18));
+      filter: blur(0.2px);
+    }
+
+    .thumb{
+      width:100%;
+      height:160px;
+      object-fit:cover;
+      border-radius:14px;
+      border:1px solid rgba(255,255,255,.16);
+      background:rgba(255,255,255,.06);
+    }
+
+    .row{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+
+    input,button{
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:14px;
+      padding:11px 12px;
+      font-size:14px;
+      background:rgba(0,0,0,.22);
+      color:var(--text);
+      outline:none;
+    }
+    input::placeholder{color:rgba(255,248,242,.55)}
+    button{
+      cursor:pointer;
+      transition:.18s;
+      font-weight:900;
+      background:linear-gradient(135deg, rgba(229,57,53,.95), rgba(255,209,102,.92));
+      color:#2b0b0c;
+      box-shadow:0 14px 40px rgba(229,57,53,.28);
+    }
+    button:hover{transform:translateY(-1px)}
+    button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+
+    .btn-primary{
+      background:linear-gradient(135deg, rgba(46,204,113,.95), rgba(255,209,102,.92));
+      color:#062213;
+      box-shadow:0 14px 40px rgba(46,204,113,.20);
+    }
+
+    .qty{display:flex; gap:8px; align-items:center}
+    .qty button{
+      width:38px; height:38px;
+      border-radius:50%;
+      padding:0;
+      display:flex; align-items:center; justify-content:center;
+      font-size:18px;
+      background:linear-gradient(135deg, rgba(46,204,113,.95), rgba(255,209,102,.92));
+      color:#062213;
+      box-shadow:none;
+    }
+    .qty span{min-width:28px; text-align:center; font-weight:1000}
+
+    .ok{
+      background:rgba(46,204,113,.14);
+      border:1px solid rgba(46,204,113,.30);
+      color:#d9ffe9;
+      padding:12px;
+      border-radius:14px;
+    }
+    .err{
+      background:rgba(229,57,53,.14);
+      border:1px solid rgba(229,57,53,.35);
+      color:#ffe2e2;
+      padding:12px;
+      border-radius:14px;
+    }
+
+    .booth-card{
+      cursor:pointer;
+      transition:.14s;
+      border-radius:var(--radius);
+      background:var(--card2);
+    }
+    .booth-card:hover{
+      transform:translateY(-2px);
+      box-shadow:0 22px 65px rgba(0,0,0,.55);
+    }
+    .booth-card.selected{
+      border-color:rgba(255,209,102,.9);
+      box-shadow:0 0 0 2px rgba(255,209,102,.45);
+    }
+
+    .badge{
+      display:inline-flex; align-items:center; gap:6px;
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      border:1px solid rgba(255,255,255,.18);
+      background:rgba(0,0,0,.18);
+      color:var(--text);
+    }
+    .dot{
+      width:10px; height:10px; border-radius:50%;
+      background:var(--green);
+      box-shadow:0 0 0 4px rgba(46,204,113,.15);
+    }
+    .dot.red{
+      background:var(--red);
+      box-shadow:0 0 0 4px rgba(229,57,53,.15);
+    }
+
+    /* 눈 내리기(아래로만 천천히) */
+    .snow{
+      position:fixed; inset:0;
+      pointer-events:none;
+      opacity:.75;
+      z-index:0;
+    }
+    .content{
+      position:relative;
+      z-index:1;
+    }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+</head>
+
+<body>
+  <canvas class="snow" id="snow"></canvas>
+
+  <div class="content">
+    <div class="top">
+      <div class="logo">🎅</div>
+      <div>
+        <h1>🎄 축제 부스 주문/예약</h1>
+        <div class="muted">부스를 선택한 뒤 옵션(메뉴/인원)과 수량을 고르고 이름·학번·전화번호를 입력해.</div>
+      </div>
+    </div>
+
+    <section class="card">
+      <div class="row">
+        <h2 style="margin:0">부스 선택</h2>
+        <span class="muted" style="margin-left:auto">터치해서 선택/해제 가능</span>
+      </div>
+      <div id="boothGrid" class="grid" style="margin-top:12px"></div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="row">
+        <h2 style="margin:0">선택한 부스</h2>
+        <span id="boothBadge" class="badge" style="margin-left:auto; display:none;">
+          <span class="dot" id="boothDot"></span>
+          <span id="boothBadgeText"></span>
+        </span>
+      </div>
+      <div id="boothInfo" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="row">
+        <h2 style="margin:0">옵션</h2>
+        <span class="muted" style="margin-left:auto" id="menuCount"></span>
+      </div>
+      <div id="menuGrid" class="grid" style="margin-top:12px"></div>
+    </section>
+
+    <section class="card" style="margin-top:14px">
+      <div class="row">
+        <h2 style="margin:0">주문자 정보</h2>
+        <span id="sum" class="muted" style="margin-left:auto"></span>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <input id="studentName" placeholder="이름" style="flex:1" required>
+        <input id="studentNo" placeholder="학번(4자리)" maxlength="4" style="width:160px" inputmode="numeric" required>
+        <input id="phone" placeholder="전화번호(필수)" style="flex:1" inputmode="tel" required>
+      </div>
+
+      <div class="row" style="margin-top:10px">
+        <button id="submit" class="btn-primary">🎁 확정하기</button>
+      </div>
+
+      <div id="msg" style="margin-top:10px"></div>
+    </section>
+  </div>
+
+<script>
+  const boothGrid = document.getElementById('boothGrid');
+  const boothInfo = document.getElementById('boothInfo');
+  const menuGrid = document.getElementById('menuGrid');
+  const studentName = document.getElementById('studentName');
+  const studentNo = document.getElementById('studentNo');
+  const phone = document.getElementById('phone');
+  const submitBtn = document.getElementById('submit');
+  const msg = document.getElementById('msg');
+  const sumEl = document.getElementById('sum');
+  const menuCount = document.getElementById('menuCount');
+
+  const boothBadge = document.getElementById('boothBadge');
+  const boothDot = document.getElementById('boothDot');
+  const boothBadgeText = document.getElementById('boothBadgeText');
+
+  let booths = [];
+  let currentBooth = null;
+  let menus = [];
+  let qty = {}; // menuId -> number
+
+  function esc(s){
+    return String(s ?? "")
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;');
+  }
+
+  function renderBoothGrid(){
+    boothGrid.innerHTML = booths.map(b=>{
+      const sel = currentBooth && currentBooth.id === b.id;
+      const closed = (b.isOpen === false);
+      return `
+        <div class="card booth-card${sel?' selected':''}"
+             onclick="selectBooth('${esc(b.id)}')">
+          ${b.imageUrl ? `<img class="thumb" src="${esc(b.imageUrl)}">`
+                       : `<div class="thumb" style="display:flex;align-items:center;justify-content:center;color:var(--muted)">이미지 없음</div>`}
+          <div style="font-weight:1000;margin-top:10px">${esc(b.name)}</div>
+          <div class="muted">${esc(b.id)}</div>
+          <div class="muted" style="margin-top:6px">
+            ${closed ? "⛔ 대기열 중지" : "✅ 주문 가능"}
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderBoothInfo(b){
+    if(!b){
+      boothInfo.innerHTML = `<p class="muted">부스를 선택해.</p>`;
+      boothBadge.style.display = "none";
+      return;
+    }
+
+    const isOpen = b.isOpen !== false;
+    const openText = isOpen
+      ? "✅ 주문 가능"
+      : `⛔ 중지됨: ${esc(b.closedReason||"대기열 중지")}`;
+
+    boothBadge.style.display = "inline-flex";
+    boothDot.className = "dot" + (isOpen ? "" : " red");
+    boothBadgeText.textContent = isOpen ? "OPEN" : "CLOSED";
+
+    boothInfo.innerHTML = `
+      <div class="row">
+        <div style="flex:0 0 260px">
+          ${b.imageUrl ? `<img class="thumb" src="${esc(b.imageUrl)}">` : `<div class="thumb"></div>`}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:20px;font-weight:1000">${esc(b.name)} (${esc(b.id)})</div>
+          <div class="muted" style="margin-top:6px">${esc(b.description||"")}</div>
+          <div class="muted" style="margin-top:6px">정원: ${b.capacity||0}</div>
+          <div class="muted" style="margin-top:6px">상태: ${openText}</div>
+        </div>
+      </div>`;
+  }
+
+  function calcSum(){
+    let s = 0;
+    for (const m of menus){
+      s += (qty[m.id]||0) * (m.price||0);
+    }
+    sumEl.textContent = `합계: ${s.toLocaleString()}원`;
+    return s;
+  }
+
+  function renderMenus(){
+    menuCount.textContent = currentBooth ? `총 ${menus.length}개` : "";
+    menuGrid.innerHTML = menus.map(m=>{
+      const q = qty[m.id]||0;
+      const max = Number(m.maxQty || 0); // 0이면 제한 없음
+      const plusDisabled = (max > 0 && q >= max);
+
+      return `
+      <div class="card">
+        ${m.imageUrl?`<img class="thumb" src="${esc(m.imageUrl)}">`:""}
+        <div style="font-weight:1000;margin-top:10px">${esc(m.name)}</div>
+        <div class="muted">${Number(m.price||0).toLocaleString()}원</div>
+
+        <div class="qty" style="margin-top:10px">
+          <button onclick="decQty('${esc(m.id)}')">−</button>
+          <span>${q}</span>
+          <button onclick="incQty('${esc(m.id)}')" ${plusDisabled ? "disabled" : ""}>+</button>
+        </div>
+
+        ${max>0 ? `<div class="muted" style="margin-top:8px">1인 최대 ${max}개</div>`
+                : `<div class="muted" style="margin-top:8px">수량 제한 없음</div>`}
+      </div>`;
+    }).join('');
+
+    calcSum();
+  }
+
+  window.incQty = id => {
+    const m = menus.find(x => x.id === id);
+    if(!m) return;
+    const max = Number(m.maxQty || 0);
+    const cur = qty[id] || 0;
+    if(max > 0 && cur >= max) return;
+    qty[id] = cur + 1;
+    renderMenus();
+  };
+
+  window.decQty = id => {
+    qty[id] = Math.max(0, (qty[id]||0) - 1);
+    renderMenus();
+  };
+
+  window.selectBooth = async id => {
+    if(currentBooth && currentBooth.id === id){
+      currentBooth = null;
+      menus = [];
+      qty = {};
+      renderBoothGrid();
+      renderBoothInfo(null);
+      renderMenus();
+      submitBtn.disabled = false;
+      msg.innerHTML = "";
+      sumEl.textContent = "";
+      return;
+    }
+
+    currentBooth = await apiGet(`booths/${id}`);
+    menus = await apiGet(`booths/${id}/menus`);
+    qty = {};
+
+    renderBoothGrid();
+    renderBoothInfo(currentBooth);
+    renderMenus();
+
+    if(currentBooth.isOpen === false){
+      submitBtn.disabled = true;
+      msg.innerHTML = `<div class="err">현재 이 부스는 주문이 잠시 중지되었습니다.<br>${esc(currentBooth.closedReason||"")}</div>`;
+    } else {
+      submitBtn.disabled = false;
+      msg.innerHTML = "";
+    }
+  };
+
+  async function loadBooths(){
+    booths = await apiGet("booths");
+    renderBoothGrid();
+    renderBoothInfo(null);
+    renderMenus();
+  }
+
+  submitBtn.onclick = async ()=>{
+    try{
+      if(!currentBooth) return alert("부스를 선택해.");
+      if(currentBooth.isOpen === false){
+        return alert(currentBooth.closedReason || "현재 대기열이 중지되었습니다.");
+      }
+
+      if(!studentName.value.trim()) return alert("이름을 입력해.");
+      if(!/^\d{4}$/.test(studentNo.value.trim())) return alert("학번은 숫자 4자리.");
+      if(!phone.value.trim()) return alert("전화번호를 입력해.");
+
+      const items = menus.map(m => ({ menuId: m.id, qty: qty[m.id]||0 }))
+                         .filter(it => it.qty > 0);
+      if(!items.length) return alert("옵션을 최소 1개 선택해.");
+
+      const payload = {
+        boothId: currentBooth.id,
+        studentNo: studentNo.value.trim(),
+        studentName: studentName.value.trim(),
+        phone: phone.value.trim(),
+        items
+      };
+
+      const res = await apiPost("orders", payload);
+      msg.innerHTML = `<div class="ok">🎉 예약 완료! ID: ${esc(res.id)}</div>`;
+
+      qty = {};
+      renderMenus();
+
+      studentName.value = "";
+      studentNo.value = "";
+      phone.value = "";
+    } catch(e){
+      msg.innerHTML = `<div class="err">오류: ${esc(e.message || e)}</div>`;
+    }
+  };
+
+  // ===== 눈 애니메이션 (아래로만 천천히) =====
+  (function snow(){
+    const c = document.getElementById("snow");
+    const ctx = c.getContext("2d");
+
+    let W, H;
+    const FLAKE_COUNT = 120;
+
+    const flakes = Array.from({ length: FLAKE_COUNT }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      r: 0.8 + Math.random() * 2.2,
+      speed: 0.3 + Math.random() * 0.8
+    }));
+
+    function resize(){
+      W = c.width = window.innerWidth;
+      H = c.height = window.innerHeight;
+    }
+    window.addEventListener("resize", resize);
+    resize();
+
+    function draw(){
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+
+      for(const f of flakes){
+        f.y += f.speed;
+
+        if(f.y > H){
+          f.y = -10;
+          f.x = Math.random() * W;
+        }
+
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      requestAnimationFrame(draw);
+    }
+
+    draw();
+  })();
+
+  loadBooths();
+</script>
+</body>
+</html>

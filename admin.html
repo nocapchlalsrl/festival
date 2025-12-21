@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <title>🎪 관리자 콘솔</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --sky:#e6f4ff; --gold:#ffe58f; --text:#0f172a; --muted:#6b7280;
+      --card:#ffffff; --border:#e5e7eb; --shadow:0 8px 20px rgba(0,0,0,.06); --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:24px auto; max-width:1080px;
+      font-family:ui-sans-serif,system-ui,AppleSDGothicNeo,Segoe UI,Arial;
+      color:var(--text); background:linear-gradient(180deg,var(--sky),#fff 60%);
+    }
+    h1{margin:0 0 16px; font-size:28px}
+    .muted{color:var(--muted)}
+    .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap}
+    .card{
+      background:var(--card); border:1px solid var(--border);
+      border-radius:var(--radius); box-shadow:var(--shadow);
+      padding:16px;
+    }
+    .grid{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+    input,select,button{
+      border:1px solid var(--border); border-radius:12px; padding:10px;
+      font-size:14px; background:#fff;
+    }
+    button{
+      cursor:pointer; transition:.2s; font-weight:600;
+      background:linear-gradient(180deg,#fff,var(--gold));
+      border-color:#f4d76b;
+    }
+    button:hover{transform:translateY(-1px)}
+    button:disabled{opacity:.45; cursor:not-allowed; transform:none;}
+    .btn-primary{
+      background:linear-gradient(180deg,#fff,var(--sky));
+      border-color:#b6ddff;
+    }
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      background:#fff; border:1px solid var(--border); font-size:12px;
+    }
+    table{width:100%; border-collapse:collapse}
+    th,td{border:1px solid var(--border); padding:8px; font-size:14px; vertical-align:top}
+    th{background:#f8fbff}
+    .thumb{width:80px; height:56px; object-fit:cover; border-radius:10px; border:1px solid var(--border)}
+    .badge{background:var(--gold); border:1px solid #f2cc5e; padding:2px 8px; border-radius:999px; font-size:12px}
+    .key-box{
+      background:#f8fbff; border:1px solid #c9e6ff; border-radius:16px;
+      padding:12px; margin:0 0 16px;
+    }
+    .hide{display:none !important;}
+    .btn-mini{padding:6px 10px; border-radius:10px; font-size:13px;}
+    .help{
+      font-size:12px; color:var(--muted); line-height:1.35;
+      background:#fbfdff; border:1px dashed #c9e6ff; padding:10px; border-radius:12px;
+      width:100%;
+    }
+  </style>
+
+  <script src="js/config.js"></script>
+  <script src="js/api.js"></script>
+</head>
+
+<body>
+  <h1>🎪 관리자 콘솔 <span class="badge">실시간</span></h1>
+  <p class="muted">총관리자(마스터키)는 부스 생성 / 부스운영자(부스키)는 자기 부스만 옵션·대기열·처리·취소 가능</p>
+
+  <div class="key-box">
+    <div class="row">
+      <input id="adminKey" placeholder="관리자 키(마스터키 또는 부스키)" style="min-width:320px">
+      <button id="saveKey" class="btn-primary">키 저장</button>
+      <button id="clearKey">키 지우기</button>
+      <span class="pill" id="apiInfo" style="margin-left:auto"></span>
+    </div>
+    <div class="row" style="margin-top:8px">
+      <span class="pill" id="roleInfo"></span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <h2 style="margin:0 0 10px">부스/옵션(항목) 관리</h2>
+
+      <div id="boothCreateBox">
+        <h3 style="margin:10px 0 6px">부스 등록 (총관리자만)</h3>
+        <div class="row">
+          <input id="b_id" placeholder="부스ID">
+          <input id="b_name" placeholder="부스명" style="flex:1">
+          <input id="b_cap" type="number" min="0" placeholder="정원(선택)">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input id="b_desc" placeholder="설명(선택)" style="flex:1">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <input type="file" id="b_img" accept=".png,.jpg,.jpeg,.webp,.gif">
+          <button id="b_img_upload">이미지 업로드</button>
+          <input id="b_img_url" placeholder="imageUrl" style="flex:1">
+        </div>
+        <div class="row" style="margin-top:8px">
+          <button id="b_add">부스 등록</button>
+          <button id="b_refresh" class="btn-primary">새로고침</button>
+        </div>
+        <div id="boothList" style="margin-top:10px"></div>
+        <hr style="margin:18px 0">
+      </div>
+
+      <h3 style="margin:10px 0 6px">옵션(항목) 등록</h3>
+      <div class="row">
+        <select id="m_booth"></select>
+        <input id="m_id" placeholder="옵션ID">
+        <input id="m_name" placeholder="옵션명 (예: 치킨/입장 1인/체험 1인)">
+        <input id="m_price" type="number" min="0" placeholder="가격(또는 1인당)">
+        <input id="m_maxQty" type="number" min="0" placeholder="1인 최대수량(0=무제한)" style="width:220px">
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <input type="file" id="m_img" accept=".png,.jpg,.jpeg,.webp,.gif">
+        <button id="m_img_upload">이미지 업로드</button>
+        <input id="m_img_url" placeholder="imageUrl" style="flex:1">
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <div class="help">
+          • "1인 최대수량": 한 사람이 이 옵션을 최대 몇 개까지 선택 가능하게 제한 (예: 5)
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:8px">
+        <button id="m_add">옵션 등록</button>
+        <button id="m_list" class="btn-primary">해당 부스 옵션 보기</button>
+      </div>
+
+      <div id="menuList" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card">
+      <div class="row">
+        <h2 style="margin:0">부스별 예약 (실시간)</h2>
+        <span class="pill" id="salesInfo" style="margin-left:auto">매출: -</span>
+        <select id="selBooth"></select>
+        <button id="pauseBtn" class="btn-primary">대기열 중지</button>
+        <button id="resumeBtn" class="btn-primary">재개</button>
+      </div>
+      <div id="resvBox" style="margin-top:10px"></div>
+    </section>
+  </div>
+
+<script>
+  const apiInfo = document.getElementById('apiInfo');
+  apiInfo.textContent = "API " + (window.API_BASE_URL || "(미설정)");
+
+  const roleInfo = document.getElementById("roleInfo");
+  const boothCreateBox = document.getElementById("boothCreateBox");
+  const salesInfo = document.getElementById("salesInfo");
+
+  const keyEl = document.getElementById('adminKey');
+  keyEl.value = localStorage.getItem("adminKey") || "";
+
+  function el(id){ return document.getElementById(id); }
+  function esc(s){
+    return String(s).replaceAll("&","&amp;")
+                    .replaceAll("<","&lt;")
+                    .replaceAll(">","&gt;");
+  }
+
+  document.getElementById('saveKey').onclick = async ()=> {
+    const k = keyEl.value.trim();
+    if(!k) return alert("키를 입력하세요.");
+    localStorage.setItem("adminKey", k);
+    alert("저장됨");
+    await applyRoleUI();
+  };
+
+  document.getElementById('clearKey').onclick = ()=> {
+    localStorage.removeItem("adminKey");
+    keyEl.value="";
+    alert("삭제됨");
+    location.reload();
+  };
+
+  // ✅ 관리자 요청은 api.js를 안 믿고, 여기서 헤더를 강제로 넣는 방식으로 안전하게 처리
+  async function adminFetch(path, options){
+    const key = (localStorage.getItem("adminKey") || "").trim();
+    if(!key) throw new Error("키가 없습니다. 저장하세요.");
+    const url = (window.API_BASE_URL || "") + (path.startsWith("/") ? path : "/"+path);
+    const headers = Object.assign({}, (options?.headers||{}), {
+      "X-Admin-Key": key,
+      "ngrok-skip-browser-warning":"1",
+      "Accept": "application/json",
+    });
+    return fetch(url, Object.assign({}, options, { headers }));
+  }
+
+  async function adminGet(path){
+    const res = await adminFetch(path, { method:"GET", cache:"no-cache" });
+    const text = await res.text();
+    if(!res.ok) throw new Error(`HTTP ${res.status}\n${text}`);
+    return JSON.parse(text);
+  }
+
+  async function adminPost(path, body){
+    const res = await adminFetch(path, {
+      method:"POST",
+      cache:"no-cache",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify(body ?? {})
+    });
+    const text = await res.text();
+    if(!res.ok) throw new Error(`HTTP ${res.status}\n${text}`);
+    return JSON.parse(text);
+  }
+
+  async function refreshBooths(){
+    const list = await apiGet("booths");
+
+    el("boothList").innerHTML = list.length ? `
+      <table>
+        <thead><tr>
+          <th>이미지</th><th>ID</th><th>이름</th><th>상태</th><th>정원</th><th>설명</th>
+        </tr></thead>
+        <tbody>
+        ${list.map(b=>`
+          <tr>
+            <td>${b.imageUrl?`<img class="thumb" src="${b.imageUrl}">`:""}</td>
+            <td>${esc(b.id)}</td>
+            <td>${esc(b.name)}</td>
+            <td>${b.isOpen ? "OPEN" : `중지(${esc(b.closedReason||"")})`}</td>
+            <td>${b.capacity||0}</td>
+            <td>${esc(b.description||"")}</td>
+          </tr>
+        `).join("")}
+        </tbody>
+      </table>
+    ` : `<p class="muted">부스 없음</p>`;
+
+    const opts = list.map(b=>`<option value="${b.id}">${esc(b.name)} (${esc(b.id)})</option>`).join("");
+
+    el("m_booth").innerHTML = `<option value="">부스 선택</option>` + opts;
+
+    const prev = el("selBooth").value;
+    el("selBooth").innerHTML = `<option value="">부스 선택</option>` + opts;
+    if(prev) el("selBooth").value = prev;
+  }
+
+  async function uploadImage(fileElId, outElId){
+    const f = el(fileElId).files?.[0];
+    if(!f) return alert("이미지 선택");
+
+    const fd = new FormData();
+    fd.append("file", f);
+
+    const res = await adminFetch("admin/upload", { method:"POST", body: fd });
+    const j = await res.json();
+    if(!res.ok || !j.ok) throw new Error(j.error || "업로드 실패");
+    el(outElId).value = j.url;
+    alert("업로드 성공");
+  }
+
+  el("b_img_upload").onclick = async ()=> {
+    try { await uploadImage("b_img", "b_img_url"); }
+    catch(e){ alert("업로드 실패: "+e.message); }
+  };
+
+  el("m_img_upload").onclick = async ()=> {
+    try { await uploadImage("m_img", "m_img_url"); }
+    catch(e){ alert("업로드 실패: "+e.message); }
+  };
+
+  el("b_add").onclick = async ()=> {
+    try{
+      const boothKey = prompt("이 부스 운영자 키(부스키)를 설정하세요.");
+      if(boothKey === null) return;
+      if(!boothKey.trim()) return alert("부스키는 필수입니다.");
+
+      const payload = {
+        id: el("b_id").value.trim(),
+        name: el("b_name").value.trim(),
+        description: el("b_desc").value.trim(),
+        capacity: Number(el("b_cap").value || 0),
+        imageUrl: el("b_img_url").value.trim(),
+        adminKey: boothKey.trim()
+      };
+
+      if(!payload.id || !payload.name) return alert("부스ID / 이름 필수");
+
+      await adminPost("admin/booths", payload);
+      alert("부스 등록 완료");
+      await refreshBooths();
+    }catch(e){
+      alert("부스 등록 실패: " + e.message);
+    }
+  };
+
+  el("m_add").onclick = async ()=> {
+    try{
+      const boothId = el("m_booth").value;
+
+      const payload = {
+        id: el("m_id").value.trim(),
+        boothId,
+        name: el("m_name").value.trim(),
+        price: Number(el("m_price").value || 0),
+        imageUrl: el("m_img_url").value.trim(),
+        maxQty: Number(el("m_maxQty").value || 0),
+        options: [] // UI에서 안 쓰니까 빈 배열로 고정
+      };
+
+      if(!payload.id || !payload.boothId || !payload.name)
+        return alert("옵션ID / 부스 / 옵션명 필수");
+
+      await adminPost("admin/menus", payload);
+      alert("옵션 등록 완료");
+    }catch(e){
+      alert("옵션 등록 실패: "+e.message);
+    }
+  };
+
+  el("m_list").onclick = async ()=> {
+    try{
+      const boothId = el("m_booth").value;
+      if(!boothId) return alert("부스 선택");
+      const res = await adminGet(`admin/menus?boothId=${encodeURIComponent(boothId)}`);
+      const items = res.items || [];
+
+      el("menuList").innerHTML = items.length ? `
+      <table>
+        <thead><tr>
+          <th>이미지</th><th>ID</th><th>옵션(항목)</th><th>가격</th><th>1인 최대수량</th>
+        </tr></thead>
+        <tbody>
+          ${items.map(m=>`
+            <tr>
+              <td>${m.imageUrl?`<img class="thumb" src="${m.imageUrl}">`:""}</td>
+              <td>${esc(m.id)}</td>
+              <td>${esc(m.name)}</td>
+              <td style="text-align:right">${Number(m.price||0).toLocaleString()}</td>
+              <td style="text-align:center">${Number(m.maxQty||0)}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>` : `<p class="muted">옵션 없음</p>`;
+    }catch(e){
+      el("menuList").innerHTML = `<p class="muted">오류: ${e.message}</p>`;
+    }
+  };
+
+  let timer = null;
+
+  el("selBooth").onchange = ()=> {
+    if(timer) clearInterval(timer);
+    renderOrders();
+    if(el("selBooth").value) timer = setInterval(renderOrders, 5000);
+  };
+
+  async function setStatus(id, status){
+    await adminPost("admin/reservations/status", { id, status });
+  }
+
+  function setSalesText(doneTotal, allTotal, doneCount, allCount){
+    const d = doneTotal.toLocaleString();
+    const a = allTotal.toLocaleString();
+    salesInfo.textContent = `매출(DONE): ${d}원 (${doneCount}건) · 전체: ${a}원 (${allCount}건)`;
+  }
+
+  async function renderOrders(){
+    const boothId = el("selBooth").value;
+    if(!boothId){
+      el("resvBox").innerHTML = `<p class="muted">부스를 선택하세요.</p>`;
+      salesInfo.textContent = "매출: -";
+      return;
+    }
+    try{
+      const res = await adminGet(`admin/reservations?boothId=${encodeURIComponent(boothId)}`);
+      const items = res.items || [];
+
+      // ✅ 매출 계산: DONE 합계 / 전체 합계
+      let doneTotal = 0, allTotal = 0, doneCount = 0, allCount = items.length;
+      for(const o of items){
+        const t = Number(o.total || 0);
+        allTotal += t;
+        if(String(o.status||"").toUpperCase() === "DONE"){
+          doneTotal += t;
+          doneCount += 1;
+        }
+      }
+      setSalesText(doneTotal, allTotal, doneCount, allCount);
+
+      if(!items.length){
+        el("resvBox").innerHTML = `<p class="muted">예약 없음</p>`;
+        return;
+      }
+
+      el("resvBox").innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th><th>학번</th><th>이름</th><th>전화번호</th>
+              <th>옵션(항목)</th><th>금액</th><th>상태</th><th>시각</th><th>작업</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${items.map(o=>{
+              const lines = (o.items||[]).map(it=>`${it.menuId} x ${it.qty}`).join(', ');
+              const doneDisabled = (o.status === "DONE" || o.status === "CANCELLED") ? "disabled" : "";
+              const cancelDisabled = (o.status === "CANCELLED") ? "disabled" : "";
+              return `
+              <tr>
+                <td>${o.id}</td>
+                <td>${esc(o.studentNo)}</td>
+                <td>${esc(o.studentName)}</td>
+                <td>${o.phone ? esc(o.phone) : "-"}</td>
+                <td>${esc(lines)}</td>
+                <td style="text-align:right">${Number(o.total||0).toLocaleString()}</td>
+                <td>${esc(o.status||"")}</td>
+                <td>${esc(o.createdAt||"")}</td>
+                <td style="white-space:nowrap">
+                  <button class="btn-mini btn-done" data-id="${o.id}" ${doneDisabled}>처리</button>
+                  <button class="btn-mini btn-cancel" data-id="${o.id}" ${cancelDisabled}>취소</button>
+                </td>
+              </tr>`;
+            }).join("")}
+          </tbody>
+        </table>
+      `;
+
+      el("resvBox").querySelectorAll(".btn-done").forEach(btn=>{
+        btn.onclick = async e=>{
+          const id = e.target.getAttribute("data-id");
+          if(!confirm(`예약(${id}) 처리 완료로 바꿀까요?`)) return;
+          try{ await setStatus(id, "DONE"); renderOrders(); }
+          catch(err){ alert("처리 실패: "+err.message); }
+        };
+      });
+
+      el("resvBox").querySelectorAll(".btn-cancel").forEach(btn=>{
+        btn.onclick = async e=>{
+          const id = e.target.getAttribute("data-id");
+          if(!confirm(`예약(${id}) 취소할까요?`)) return;
+          try{ await setStatus(id, "CANCELLED"); renderOrders(); }
+          catch(err){ alert("취소 실패: "+err.message); }
+        };
+      });
+
+    }catch(e){
+      el("resvBox").innerHTML = `<p class="muted">오류: ${e.message}</p>`;
+    }
+  }
+
+  async function setBoothOpen(boothId, isOpen){
+    let reason = "";
+    if(!isOpen){
+      reason = prompt("중지 사유(사용자에게 표시됨)", "현재 주문이 많아 잠시 중지합니다.") || "";
+    }
+    await adminPost("admin/booths/status", { boothId, isOpen, reason });
+    await refreshBooths();
+    await renderOrders();
+  }
+
+  el("pauseBtn").onclick = async ()=> {
+    const boothId = el("selBooth").value;
+    if(!boothId) return alert("부스를 선택하세요.");
+    try{ await setBoothOpen(boothId, false); alert("대기열 중지됨"); }
+    catch(e){ alert("실패: "+e.message); }
+  };
+
+  el("resumeBtn").onclick = async ()=> {
+    const boothId = el("selBooth").value;
+    if(!boothId) return alert("부스를 선택하세요.");
+    try{ await setBoothOpen(boothId, true); alert("재개됨"); }
+    catch(e){ alert("실패: "+e.message); }
+  };
+
+  async function applyRoleUI(){
+    const key = (localStorage.getItem("adminKey") || "").trim();
+    if(!key){
+      roleInfo.textContent = "키 없음";
+      boothCreateBox.classList.remove("hide");
+      await refreshBooths();
+      return;
+    }
+
+    try{
+      const me = await adminGet("admin/whoami");
+      if(me.role === "MASTER"){
+        roleInfo.textContent = "총관리자(MASTER)";
+        boothCreateBox.classList.remove("hide");
+        await refreshBooths();
+      }else{
+        roleInfo.textContent = `부스운영자(BOOTH) - ${me.allowedBoothId}`;
+        boothCreateBox.classList.add("hide");
+
+        await refreshBooths();
+        el("m_booth").value = me.allowedBoothId;
+        el("selBooth").value = me.allowedBoothId;
+        el("m_booth").disabled = true;
+        el("selBooth").disabled = true;
+
+        renderOrders();
+        if(timer) clearInterval(timer);
+        timer = setInterval(renderOrders, 5000);
+      }
+    }catch(e){
+      roleInfo.textContent = "키 오류";
+      alert("키 확인 필요: " + e.message);
+    }
+  }
+
+  // 부스 목록/역할 적용
+  refreshBooths().then(applyRoleUI);
+</script>
+</body>
+</html>
