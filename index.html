@@ -464,50 +464,61 @@
 
   // ===== 눈 애니메이션 (아래로만 천천히) =====
   (function snow(){
-    const c = document.getElementById("snow");
-    const ctx = c.getContext("2d");
+  const c = document.getElementById("snow");
+  const ctx = c.getContext("2d");
 
-    let W, H;
-    const FLAKE_COUNT = 120;
+  let W, H;
+  const FLAKE_COUNT = 120;
 
-    const flakes = Array.from({ length: FLAKE_COUNT }, () => ({
-      x: Math.random(),
-      y: Math.random(),
+  const flakes = [];
+
+  function spawnFlake(randomY = true){
+    return {
+      x: Math.random() * W,
+      y: randomY ? Math.random() * H : -10,
       r: 0.8 + Math.random() * 2.2,
       speed: 0.3 + Math.random() * 0.8
-    }));
+    };
+  }
 
-    function resize(){
-      W = c.width = window.innerWidth;
-      H = c.height = window.innerHeight;
+  function resize(){
+    W = c.width = window.innerWidth;
+    H = c.height = window.innerHeight;
+
+    // 처음 1번만 채우기
+    if(flakes.length === 0){
+      for(let i=0;i<FLAKE_COUNT;i++) flakes.push(spawnFlake(true));
     }
-    window.addEventListener("resize", resize);
-    resize();
+  }
+  window.addEventListener("resize", resize);
+  resize();
 
-    function draw(){
-      ctx.clearRect(0, 0, W, H);
-      ctx.fillStyle = "rgba(255,255,255,0.9)";
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
 
-      for(const f of flakes){
-        f.y += f.speed;
+    for(const f of flakes){
+      f.y += f.speed;
 
-        if(f.y > H){
-          f.y = -10;
-          f.x = Math.random() * W;
-        }
-
-        ctx.beginPath();
-        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-        ctx.fill();
+      if(f.y > H){
+        // 리셋도 픽셀 단위로
+        f.x = Math.random() * W;
+        f.y = -10;
       }
 
-      requestAnimationFrame(draw);
+      ctx.beginPath();
+      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+      ctx.fill();
     }
 
-    draw();
-  })();
+    requestAnimationFrame(draw);
+  }
 
-  loadBooths();
+  draw();
+})();
+
+
+ loadBooths();
 </script>
 </body>
 </html>
