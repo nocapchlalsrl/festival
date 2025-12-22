@@ -308,7 +308,7 @@
 
   function renderBoothInfo(b){
     if(!b){
-      boothInfo.innerHTML = `<p class="muted">부스를 선택해.</p>`;
+      boothInfo.innerHTML = `<p class="muted">부스를 선택해주세요/</p>`;
       boothBadge.style.display = "none";
       return;
     }
@@ -427,7 +427,7 @@
 
   submitBtn.onclick = async ()=>{
     try{
-      if(!currentBooth) return alert("부스를 선택해.");
+      if(!currentBooth) return alert("부스를 선택해주세요.");
       if(currentBooth.isOpen === false){
         return alert(currentBooth.closedReason || "현재 대기열이 중지되었습니다.");
       }
