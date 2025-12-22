@@ -60,6 +60,7 @@
         rgba(255,209,102,.95),
         rgba(229,57,53,.94) 42%,
         rgba(255,255,255,.35) 82%);
+
       box-shadow:0 12px 35px rgba(229,57,53,.35);
       border:1px solid rgba(255,255,255,.18);
       flex:0 0 auto;
@@ -195,6 +196,26 @@
       position:relative;
       z-index:1;
     }
+
+    /* ===== 모바일 최적화 ===== */
+    @media (max-width: 520px){
+      body{ padding:16px 12px 34px; }
+      h1{ font-size:22px; }
+      .logo{ width:44px; height:44px; font-size:22px; }
+
+      .grid{ grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:10px; }
+      .card{ padding:12px; border-radius:16px; }
+      .thumb{ height:130px; border-radius:12px; }
+
+      /* 선택한 부스(상세)에서: 가로 -> 세로 */
+      .booth-detail{ flex-direction:column !important; align-items:stretch !important; }
+      .booth-detail .booth-media{ flex:0 0 auto !important; width:100% !important; }
+      .booth-detail .thumb{ height:180px; }
+
+      /* 입력칸 3개도 세로로 */
+      .form-row{ flex-direction:column; align-items:stretch; }
+      .form-row input{ width:100% !important; }
+    }
   </style>
 
   <script src="js/config.js"></script>
@@ -246,7 +267,7 @@
         <span id="sum" class="muted" style="margin-left:auto"></span>
       </div>
 
-      <div class="row" style="margin-top:10px">
+      <div class="row form-row" style="margin-top:10px">
         <input id="studentName" placeholder="이름" style="flex:1" required>
         <input id="studentNo" placeholder="학번(4자리)" maxlength="4" style="width:160px" inputmode="numeric" required>
         <input id="phone" placeholder="전화번호(필수)" style="flex:1" inputmode="tel" required>
@@ -323,11 +344,11 @@
     boothBadgeText.textContent = isOpen ? "OPEN" : "CLOSED";
 
     boothInfo.innerHTML = `
-      <div class="row">
-        <div style="flex:0 0 260px">
+      <div class="row booth-detail">
+        <div class="booth-media" style="flex:0 0 260px">
           ${b.imageUrl ? `<img class="thumb" src="${esc(b.imageUrl)}">` : `<div class="thumb"></div>`}
         </div>
-        <div style="flex:1">
+        <div style="flex:1; min-width:0">
           <div style="font-size:20px;font-weight:1000">${esc(b.name)} (${esc(b.id)})</div>
           <div class="muted" style="margin-top:6px">${esc(b.description||"")}</div>
           <div class="muted" style="margin-top:6px">정원: ${b.capacity||0}</div>
@@ -357,6 +378,7 @@
         ${m.imageUrl?`<img class="thumb" src="${esc(m.imageUrl)}">`:""}
         <div style="font-weight:1000;margin-top:10px">${esc(m.name)}</div>
         <div class="muted">${Number(m.price||0).toLocaleString()}원</div>
+
 
         <div class="qty" style="margin-top:10px">
           <button onclick="decQty('${esc(m.id)}')">−</button>
@@ -464,61 +486,57 @@
 
   // ===== 눈 애니메이션 (아래로만 천천히) =====
   (function snow(){
-  const c = document.getElementById("snow");
-  const ctx = c.getContext("2d");
+    const c = document.getElementById("snow");
+    const ctx = c.getContext("2d");
 
-  let W, H;
-  const FLAKE_COUNT = 120;
+    let W, H;
+    const FLAKE_COUNT = 120;
+    const flakes = [];
 
-  const flakes = [];
-
-  function spawnFlake(randomY = true){
-    return {
-      x: Math.random() * W,
-      y: randomY ? Math.random() * H : -10,
-      r: 0.8 + Math.random() * 2.2,
-      speed: 0.3 + Math.random() * 0.8
-    };
-  }
-
-  function resize(){
-    W = c.width = window.innerWidth;
-    H = c.height = window.innerHeight;
-
-    // 처음 1번만 채우기
-    if(flakes.length === 0){
-      for(let i=0;i<FLAKE_COUNT;i++) flakes.push(spawnFlake(true));
+    function spawnFlake(randomY = true){
+      return {
+        x: Math.random() * W,
+        y: randomY ? Math.random() * H : -10,
+        r: 0.8 + Math.random() * 2.2,
+        speed: 0.3 + Math.random() * 0.8
+      };
     }
-  }
-  window.addEventListener("resize", resize);
-  resize();
 
-  function draw(){
-    ctx.clearRect(0, 0, W, H);
-    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    function resize(){
+      W = c.width = window.innerWidth;
+      H = c.height = window.innerHeight;
 
-    for(const f of flakes){
-      f.y += f.speed;
+      if(flakes.length === 0){
+        for(let i=0;i<FLAKE_COUNT;i++) flakes.push(spawnFlake(true));
+      }
+    }
+    window.addEventListener("resize", resize);
+    resize();
 
-      if(f.y > H){
-        // 리셋도 픽셀 단위로
-        f.x = Math.random() * W;
-        f.y = -10;
+    function draw(){
+      ctx.clearRect(0, 0, W, H);
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+
+      for(const f of flakes){
+        f.y += f.speed;
+
+        if(f.y > H){
+          f.x = Math.random() * W;
+          f.y = -10;
+        }
+
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fill();
       }
 
-      ctx.beginPath();
-      ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
-      ctx.fill();
+      requestAnimationFrame(draw);
     }
 
-    requestAnimationFrame(draw);
-  }
+    draw();
+  })();
 
-  draw();
-})();
-
-
- loadBooths();
+  loadBooths();
 </script>
 </body>
 </html>
