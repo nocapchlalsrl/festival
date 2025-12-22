@@ -308,7 +308,7 @@
 
   function renderBoothInfo(b){
     if(!b){
-      boothInfo.innerHTML = `<p class="muted">부스를 선택해주세요/</p>`;
+      boothInfo.innerHTML = `<p class="muted">부스를 선택해주세요</p>`;
       boothBadge.style.display = "none";
       return;
     }
@@ -433,7 +433,7 @@
       }
 
       if(!studentName.value.trim()) return alert("이름을 입력해.");
-      if(!/^\d{4}$/.test(studentNo.value.trim())) return alert("학번은 숫자 4자리.");
+      if(!/^\d{4}$/.test(studentNo.value.trim())) return alert("학번은 숫자 4자리 ex)2719");
       if(!phone.value.trim()) return alert("전화번호를 입력해.");
 
       const items = menus.map(m => ({ menuId: m.id, qty: qty[m.id]||0 }))
